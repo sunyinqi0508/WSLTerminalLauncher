@@ -1,7 +1,7 @@
 # Linux Terminal Launcher for WSL
 
 
-This utility launches real linux terminals such as *gnome-terminal, tilix or xterm* through X11 providing a better terminal experience on Windows Subsystem on Linux.
+This utility launches real linux terminals such as *gnome-terminal, tilix or xterm* through X11, providing a better terminal experience on Windows Subsystem on Linux.
 
 
 **Prerequisites**:
