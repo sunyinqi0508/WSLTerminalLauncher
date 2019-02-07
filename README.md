@@ -1,7 +1,7 @@
-# Linux Terminal Launcher for Windows Subsystem on Linux
+# Linux Terminal Launcher for WSL
 
 
-This utility launches real linux terminals such as gnome-terminal, tilix or xterm through X11 providing a better terminal experience on WSL.
+This utility launches real linux terminals such as *gnome-terminal, tilix or xterm* through X11 providing a better terminal experience on Windows Subsystem on Linux.
 
 
 **Prerequisites**:
@@ -29,7 +29,7 @@ Terminal
 
     -c disrto terminal     #Change WSL distro-launcher and terminal program
 
-    -n cmdline             #Change launch command-line to *cmdline*
+    -n cmdline             #Change launch command-line to cmdline
 
     -i [location]          #Install TerminalLauncher to Windows\System32
 
