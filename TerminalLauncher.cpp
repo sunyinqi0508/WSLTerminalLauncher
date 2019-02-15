@@ -9,14 +9,22 @@
 #include <filesystem>
 using namespace std;
 
-const char pp[2048] = { "ubuntu1804 -c \"echo \\\"#\"'!'\"\\\"/bin/bash$'\\n'DISPLAY=:0 "
-						"gnome-terminal \\&$'\\n'sleep 10$'\\n'while [ '$''('ls -1 /dev/pts/"
-						"\\|wc -l')' -ge 2 ]\\; do$'\\n'sleep 5$'\\n'done|sh\"" };
+char pp[2048] = { "ubuntu1804 -c \"echo \\\"#\"!\"\\\"/bin/bash$'\\n'"
+						"CUR_CON='$''('ls -1 /dev/pts/ \\|wc -l')'$'\\n'"
+						"while  $'\\n'DISPLAY=:0 gnome-terminal \\&$'\\n'sleep 2"
+						"$'\\n'[ '$''('ls -1 /dev/pts/ \\|wc -l')' -le '$'CUR_CON ]$'\\n'"
+						"do true\\;$'\\n'done$'\\n'sleep 10$'\\n'while [ '$''('ls -1 /dev/pts/\\|wc"
+						" -l')' -ge 2 ]\\; do$'\\n'sleep 5$'\\n'done|sh \"" };
 
-const char* _template1 = " -c \"echo \\\"#\"'!'\"\\\"/bin/bash$'\\n'DISPLAY=:0 ",
-		  * _template2 = " \\&$'\\n'sleep 10$'\\n'while [ '$''('ls -1 /dev/pts/" 
-						 "\\|wc -l')' -ge 2 ]\\; do$'\\n'sleep 5$'\\n'done|sh\"";
+const char* _template1 = " -c \"echo \\\"#\"!\"\\\"/bin/bash$'\\n'"
+						"CUR_CON='$''('ls -1 /dev/pts/ \\|wc -l')'$'\\n'"
+						"while  $'\\n'DISPLAY=:0 ",
+		  * _template2 = " \\&$'\\n'sleep 2"
+						"$'\\n'[ '$''('ls -1 /dev/pts/ \\|wc -l')' -lt 2 ]$'\\n'"
+						" do true\\;$'\\n'done$'\\n'sleep 10$'\\n'while [ '$''('ls -1 /dev/pts/\\|wc"
+						" -l')' -ge 2 ]\\; do$'\\n'sleep 5$'\\n'done|sh \"";
 bool install = 0;
+char filename[256] = {"\\term.exe"};
 class Splits {
 public:
 	int size = 0;
@@ -135,7 +143,7 @@ void Modify(string newcmd)
 			error_code code;
 			char temp_path[2048];
 			GetTempPath(2048, temp_path);
-			char* new_filename = strcat(temp_path, "/temp.exe");
+			char* new_filename = strcat(temp_path, "/~temp.exe");
 			filesystem::copy_file(exe_path, new_filename,filesystem::copy_options::overwrite_existing,code);
 			
 			
@@ -159,7 +167,8 @@ void Modify(string newcmd)
 			
 			char* system32 = new char[2048];
 			GetSystemDirectory(system32, 2040);
-			strcat(system32, "\\terminal.exe");
+			strcat(system32, filename);
+
 			sprintf(temp_param, "-cb %s %d", install?system32:exe_path, pid);
 			ShellExecute(NULL, "runas", new_filename, temp_param, NULL, SW_SHOWNORMAL);
 			delete[] system32;
@@ -177,47 +186,53 @@ int WinMain(
 ){
 	
 	auto ret = split(lpCmdLine, ' ');
-	char** argc = ret->data;
-	int argv = ret->size;
+	char** argv = ret->data;
+	int argc = ret->size;
 	string newcmd;
 	bool change = false;
-	for (int i = 0; i < argv; ++i)
+	for (int i = 0; i < argc; ++i)
 	{
-		if ((!strcmp(argc[i], "-i") || !strcmp(argc[i], "install"))) {
+		if ((!strcmp(argv[i], "-i") || !strcmp(argv[i], "install"))) {
 			install = true;
+			if (i + 1 < argc && argv[i + 1][0] != '-')
+			{
+				memset(filename, 0, sizeof(filename));
+				filename[0] = '\\';
+				strcat(filename, argv[i + 1]);
+			}
 		}
-		else if (!strcmp(argc[i], "-c") && i + 2 < argv)
+		else if (!strcmp(argv[i], "-c") && i + 2 < argc)
 		{
-			newcmd = string(argc[i + 1]) + _template1 + argc[i + 2] + _template2;
+			newcmd = string(argv[i + 1]) + _template1 + argv[i + 2] + _template2;
 			change = true;
 			i += 2;
 		}
-		else if (!strcmp(argc[i], "-n") && i + 2 < argv) {
-			newcmd = argc[i + 1];
+		else if (!strcmp(argv[i], "-n") && i + 2 < argc) {
+			newcmd = argv[i + 1];
 			change = true;
 			++i;
 		}
-		else if (!strcmp(argc[i], "-cb") && i + 2 < argv) {
+		else if (!strcmp(argv[i], "-cb") && i + 2 < argc) {
 			//MessageBox(0, "", "", 0);
 			HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
 				FALSE, GetCurrentProcessId());
 			if (h)
 			{
 
-				HANDLE parent = (HANDLE)OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (DWORD)atoi(argc[i + 2]));
+				HANDLE parent = (HANDLE)OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (DWORD)atoi(argv[i + 2]));
 				WaitForSingleObject(parent, INFINITE);
 				//MessageBox(0, "parent exited", pp, 0);
 
 				char exe_path[2048] = {};
 
 				if (GetModuleFileNameEx(h, 0, exe_path, sizeof(exe_path) - 1))
-					filesystem::copy_file(exe_path, argc[i + 1],
+					filesystem::copy_file(exe_path, argv[i + 1],
 						filesystem::copy_options::overwrite_existing);
 
 			}
 			return 0;
 		}
-		else if (!strcmp(argc[i], "-s"))
+		else if (!strcmp(argv[i], "-s"))
 			MessageBox(0, pp, "Current Commandline", 0);
 
 	}
@@ -242,7 +257,7 @@ int WinMain(
 					char *system32 = new char[2048];
 					GetSystemDirectory(system32, 2048);
 					error_code code;
-					filesystem::copy_file(exe_path, strcat(system32, "\\terminal.exe"), 
+					filesystem::copy_file(exe_path, strcat(system32, filename), 
 						filesystem::copy_options::overwrite_existing, code);
 					MessageBox(0, code.message().c_str(), exe_path, 0);
 					delete[] system32;
@@ -260,7 +275,7 @@ int WinMain(
 
 		if (Process32First(snapshot, &entry) == TRUE)
 			while (Process32Next(snapshot, &entry) == TRUE)
-				if (strcmp(entry.szExeFile, "init") == 0)
+				if (strcmp(entry.szExeFile, "bash") == 0)
 				{
 					wsl_launched = true;
 					break;
@@ -279,13 +294,19 @@ int WinMain(
 			/*CreateProcess(NULL, (instance),
 				NULL, NULL, true, NULL, 0, NULL, &si, &pi);*/
 		}
+		else
+		{
+			//pp[strlen(pp) - 1] = '&';
+			//pp[strlen(pp)] = '"';
+
+		}
 		ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 		ZeroMemory(&si, sizeof(STARTUPINFO));
 		char* tt = const_cast<char*>(pp);
-		/*FILE* fp;
+		FILE* fp;
 		fp = fopen("cmd.sh", "w");
 		fprintf(fp, "%s", pp);
-		fclose(fp);*/
+		fclose(fp);
 		CreateProcess(NULL, tt, NULL, NULL, false, CREATE_NO_WINDOW, 0, NULL, &si, &pi);
 	}
 	return 0;
