@@ -34,5 +34,7 @@ Terminal
     -i [location]          #Install TerminalLauncher to Windows\System32
 
     -s                     #Show current command line
+    
+    -x [Command]           #Launch with another command
 ```
  
