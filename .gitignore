@@ -1,0 +1,6 @@
+.vs
+.idea
+x64
+cmd.sh
+*.swp
+*.user
